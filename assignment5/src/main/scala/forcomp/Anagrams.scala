@@ -1,7 +1,5 @@
 package forcomp
 
-import common._
-
 object Anagrams {
 
   /** A word is simply a `String`. */
@@ -35,10 +33,10 @@ object Anagrams {
    */
   def wordOccurrences(w: Word): Occurrences = w.toLowerCase.groupBy(identity).mapValues(_.length).toList.sorted
 
+  def charOccurrences(o: Occurrences, c: Char): Int = o.find(_._1 == c).getOrElse((c, 0))._2
+
   /** Converts a sentence into its character occurrence list. */
   def sentenceOccurrences(s: Sentence): Occurrences = wordOccurrences(s.mkString(""))
-
-  def charOccurrences(o: Occurrences, c: Char): Int = o.find(_._1 == c).getOrElse((c, 0))._2
 
   /** The `dictionaryByOccurrences` is a `Map` from different occurrences to a sequence of all
    *  the words that have that occurrence count.
@@ -58,7 +56,7 @@ object Anagrams {
   lazy val dictionaryByOccurrences: Map[Occurrences, List[Word]] = dictionary.groupBy(wordOccurrences)
 
   /** Returns all the anagrams of a given word. */
-  def wordAnagrams(word: Word): List[Word] = dictionaryByOccurrences(wordOccurrences(word))
+  def wordAnagrams(word: Word): List[Word] = dictionaryByOccurrences.getOrElse(wordOccurrences(word), Nil)
 
   /** Returns the list of all subsets of the occurrence list.
    *  This includes the occurrence itself, i.e. `List(('k', 1), ('o', 1))`
@@ -88,9 +86,8 @@ object Anagrams {
       else List((occurrence._1, i))
     }).toList
 
-    if (occurrences.isEmpty) return List(List())
-
-    for {
+    if (occurrences.isEmpty) List(List())
+    else for {
       c1 <- charCombinations(occurrences.head)
       c2 <- combinations(occurrences.tail)
     } yield c1 ::: c2
@@ -153,15 +150,17 @@ object Anagrams {
    *  Note: There is only one anagram of an empty sentence.
    */
   def sentenceAnagrams(sentence: Sentence): List[Sentence] = {
-    if (sentence.isEmpty) List(sentence)
+    def loop(occurrences: Occurrences): List[Sentence] = {
+      if (occurrences.isEmpty) List(List())
+      else for {
+        combination <- combinations(occurrences)
+        word <- dictionaryByOccurrences.getOrElse(combination, Nil)
+        sentence <- loop(subtract(occurrences, wordOccurrences(word)))
+        if combination.nonEmpty
+      } yield word :: sentence
+    }
 
-    val occurrences = sentenceOccurrences(sentence)
-    val combinations = combinations(occurrences)
-    val words =
+    loop(sentenceOccurrences(sentence))
   }
 
-}
-
-object Main extends App {
-  val a = Anagrams.dictionary
 }
