@@ -65,12 +65,10 @@ trait StringParserTerrain extends GameDef {
    * `Vector` class
    */
   def findChar(c: Char, levelVector: Vector[Vector[Char]]): Pos = {
-    val rowOption = levelVector.find(vector => vector.indexOf(c) != -1)
+    val x = levelVector.indexWhere(vector => vector.indexOf(c) != -1)
 
-    rowOption match {
-      case Some(row) => Pos(levelVector.indexOf(row), row.indexOf(c))
-      case None => throw new RuntimeException("Wrong assumptions?")
-    }
+    if (x == -1) throw new RuntimeException("Wrong assumptions?")
+    else Pos(x, levelVector(x).indexOf(c))
   }
 
   private lazy val vector: Vector[Vector[Char]] =
